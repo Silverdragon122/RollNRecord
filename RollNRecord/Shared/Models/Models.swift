@@ -19,7 +19,6 @@ struct Recording {
         let avgDescentRate: Double
         let duration: TimeInterval
         let climbDuration: TimeInterval? 
-        let maxSpeed: Double?  
     }
 }
 

@@ -31,6 +31,7 @@ struct ZiplineTrackerView: View {
     @StateObject private var tracker = ZiplineTracker()
     @State private var showRecordingsView = false
     @State private var latestRecordingFilename: String?
+    @Environment(\.dismiss) private var dismiss  
     
     var body: some View {
         VStack {
@@ -61,6 +62,13 @@ struct ZiplineTrackerView: View {
             if let filename = latestRecordingFilename {
                 ViewRecordings(filename: filename, isFromRecording: true)
             }
+        }
+        .alert("Empty Recording", isPresented: $tracker.showEmptyRecordingAlert) {
+            Button("OK") {
+                dismiss()
+            }
+        } message: {
+            Text("No movement was detected. The recording was discarded.")
         }
     }
     

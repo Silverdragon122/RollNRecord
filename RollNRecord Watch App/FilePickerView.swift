@@ -48,7 +48,29 @@ struct FilePickerView: View {
         NavigationView {
             Group {
                 if files.isEmpty {
-                    emptyStateView
+                    VStack(spacing: 12) {
+                        Image(systemName: "square.stack.3d.up.slash")
+                            .font(.system(size: 36))
+                            .foregroundStyle(.orange)
+                            .symbolEffect(.pulse)
+                        
+                        Text("No Recordings")
+                            .font(.headline)
+                        
+                        Text("Start your first recording")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        NavigationLink(destination: ZiplineTrackerView()) {
+                            Label("Record", systemImage: "record.circle")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .padding(.top, 8)
+                    }
+                    .padding()
                 } else {
                     List {
                         ForEach(files, id: \.self) { file in
@@ -115,28 +137,41 @@ struct FilePickerView: View {
         }
     }
     
-    var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "square.stack.3d.up.slash")
-                .font(.system(size: 36))
-                .foregroundStyle(.orange.gradient)
-            
-            Text("No Recordings")
-                .font(.system(size: 16, weight: .medium))
-            
-            Text("Start your first recording")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-            
-            NavigationLink(destination: ZiplineTrackerView()) {
-                Label("Record", systemImage: "record.circle")
-                    .font(.system(size: 14, weight: .medium))
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-            .padding(.top, 8)
+    private func activityIcon(for filename: String) -> (icon: String, color: Color) {
+        if filename.contains("_zip.json") {
+            return ("figure.climbing", .blue)
+        } else if filename.contains("_drop.json") {
+            return ("arrow.down.to.line.alt", .red)
         }
-        .padding()
+        return ("questionmark.circle", .gray)
+    }
+    
+    private func editableRow(for file: String) -> some View {
+        Button(action: { toggleSelection(for: file) }) {
+            HStack {
+                Image(systemName: selectedFiles.contains(file) ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selectedFiles.contains(file) ? .blue : .secondary)
+                let activity = activityIcon(for: file)
+                Image(systemName: activity.icon)
+                    .foregroundStyle(activity.color)
+                Text(formatFilename(file))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+    }
+    
+    private func navigableRow(for file: String) -> some View {
+        NavigationLink(destination: ViewRecordings(filename: file, isFromRecording: false)) {
+            HStack {
+                let activity = activityIcon(for: file)
+                Image(systemName: activity.icon)
+                    .foregroundStyle(activity.color)
+                Text(formatFilename(file))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
     }
     
     private func loadFiles() {
@@ -258,47 +293,6 @@ struct FilePickerView: View {
             }
         }
         selectedFiles.removeAll()
-    }
-    
-    private func activityIcon(for filename: String) -> (icon: String, color: Color) {
-        if filename.contains("_zip.json") {
-            return ("figure.climbing", .blue)
-        } else if filename.contains("_drop.json") {
-            return ("arrow.down.to.line.alt", .red)
-        }
-        return ("questionmark.circle", .gray)
-    }
-    
-    private func editableRow(for file: String) -> some View {
-        Button(action: {
-            toggleSelection(for: file)
-        }) {
-            HStack {
-                Image(systemName: selectedFiles.contains(file) ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(selectedFiles.contains(file) ? .blue : .secondary)
-                let activity = activityIcon(for: file)
-                Image(systemName: activity.icon)
-                    .foregroundStyle(activity.color)
-                Text(formatFilename(file))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-            }
-            .contentShape(Rectangle())
-        }
-    }
-    
-    private func navigableRow(for file: String) -> some View {
-        NavigationLink(destination: ViewRecordings(filename: file, isFromRecording: false)) {
-            HStack {
-                let activity = activityIcon(for: file)
-                Image(systemName: activity.icon)
-                    .foregroundStyle(activity.color)
-                Text(formatFilename(file))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-            }
-            .contentShape(Rectangle())
-        }
     }
 }
 

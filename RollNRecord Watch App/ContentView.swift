@@ -9,24 +9,26 @@ struct ContentView: View {
                         VStack {
                             Image(systemName: "figure.climbing")
                                 .font(.system(size: 25))
+                                .foregroundStyle(.linearGradient(colors: [.blue, .blue.opacity(0.7)], startPoint: .top, endPoint: .bottom))
                             Text("Zipline")
                                 .font(.caption2)
+                                .foregroundColor(.blue)
                         }
                         .frame(width: 70, height: 70)
-                        .buttonStyle(.bordered)
-                        .tint(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     
                     NavigationLink(destination: FilePickerView()) {
                         VStack {
                             Image(systemName: "doc.text.magnifyingglass")
                                 .font(.system(size: 25))
+                                .foregroundStyle(.linearGradient(colors: [.mint, .mint.opacity(0.7)], startPoint: .top, endPoint: .bottom))
                             Text("Records")
                                 .font(.caption2)
+                                .foregroundColor(.mint)
                         }
                         .frame(width: 70, height: 70)
-                        .buttonStyle(.bordered)
-                        .tint(.green)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                 }
                 HStack(spacing: 20) {
@@ -34,17 +36,19 @@ struct ContentView: View {
                         VStack {
                             Image(systemName: "arrow.down.to.line.alt")
                                 .font(.system(size: 25))
+                                .foregroundStyle(.pink)
                             Text("Drop Tower")
                                 .font(.caption2)
+                                .foregroundColor(.pink)
                         }
                         .frame(width: 70, height: 70)
-                        .buttonStyle(.bordered)
-                        .tint(.red)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                 }
             }
             .padding()
             .navigationTitle("RollNRecord")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

@@ -23,6 +23,7 @@ class ZiplineTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var countdownValue: Int = 3
     @Published var isCountingDown = false
     @Published var isSaving = false
+    @Published var showEmptyRecordingAlert = false
     
     private var lastAltitudeReading: Double?
     private var lastTimestamp: Date?
@@ -121,6 +122,16 @@ class ZiplineTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         isActionInProgress = true
         isSaving = true
         
+        if isEmptyRecording() {
+            
+            DispatchQueue.main.async {
+                self.showEmptyRecordingAlert = true
+                self.cleanupResources()
+                self.isSaving = false
+                self.isActionInProgress = false
+            }
+            return
+        }
         
         let filename = isRecording && !recordingData.isEmpty ? saveRecordingData() : ""
         cleanupResources()
@@ -172,6 +183,7 @@ class ZiplineTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func updateElevation(with absoluteAltitude: Double) {
         let now = Date()
         DispatchQueue.main.async {
+            guard !absoluteAltitude.isNaN else { return }
             
             if self.currentRideType == .dropTower {
                 if self.baseAltitude == nil {
@@ -190,6 +202,7 @@ class ZiplineTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let minimumInterval = self.currentRideType == .zipline ? self.ziplineUpdateInterval : self.altimeterUpdateInterval
                 if timeDelta >= minimumInterval {
                     let altitudeDelta = absoluteAltitude - lastAltitude
+                    guard !altitudeDelta.isNaN else { return }
                     
                     let newRate = (altitudeDelta / timeDelta) * 60.0
                     self.descentRate = (self.descentRate + newRate) / 2.0
@@ -293,6 +306,17 @@ class ZiplineTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         return filename
+    }
+    
+    private func isEmptyRecording() -> Bool {
+        guard !recordingData.isEmpty else { return true }
+        
+        
+        return recordingData.allSatisfy { point in
+            abs(point.altitude) < 1.0 && 
+            abs(point.descentRate) < 1.0 &&
+            (point.speed ?? 0.0) < 1.0
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

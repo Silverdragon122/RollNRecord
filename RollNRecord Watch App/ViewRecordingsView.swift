@@ -9,8 +9,10 @@ class RecordingsViewModel: ObservableObject {
     @Published var recording: Recording?
     @Published var errorMessage: String?
     @Published var isLoading = false
+    private var currentFilename: String?  
     
     func loadRecording(filename: String) {
+        currentFilename = filename  
         isLoading = true
         recording = nil
         errorMessage = nil
@@ -66,13 +68,19 @@ class RecordingsViewModel: ObservableObject {
     
     private func calculateStats<T: RecordingPoint>(for data: [T]) -> Recording.RecordingStats {
         guard !data.isEmpty else {
-            return Recording.RecordingStats(maxAltitude: 0, avgDescentRate: 0, duration: 0, climbDuration: nil)
+            return Recording.RecordingStats(
+                maxAltitude: 0,
+                avgDescentRate: 0,
+                duration: 0,
+                climbDuration: nil,
+                maxSpeed: nil  
+            )
         }
         
         let avgDescentRate = data.reduce(0) { $0 + $1.descentRate } / Double(data.count)
         let maxAltitude = data.map { $0.altitude }.max() ?? 0
         let duration = data.last!.timestamp.timeIntervalSince(data[0].timestamp)
-        
+        let maxSpeed = data.compactMap { $0.speed }.max()  
         
         let climbDuration: TimeInterval?
         if let dropStartIndex = data.firstIndex(where: { $0.descentRate < -10 }) {
@@ -85,14 +93,44 @@ class RecordingsViewModel: ObservableObject {
             maxAltitude: maxAltitude,
             avgDescentRate: avgDescentRate,
             duration: duration,
-            climbDuration: climbDuration
+            climbDuration: climbDuration,
+            maxSpeed: maxSpeed  
         )
     }
     
     func calculateIntensity(stats: Recording.RecordingStats) -> Int {
-        let maxAltitudeFactor = min(stats.maxAltitude / 17, 10) * 0.6
-        let avgDescentRateFactor = min(abs(stats.avgDescentRate) / 493, 10) * 0.5
-        let climbTimeFactor = min((stats.climbDuration ?? 0) / 200, 10) * 0.1
+        if currentFilename?.contains("_zip.json") ?? false {
+            return calculateZiplineIntensity(stats: stats)
+        } else {
+            return calculateDropTowerIntensity(stats: stats)
+        }
+    }
+    
+    private func calculateZiplineIntensity(stats: Recording.RecordingStats) -> Int {
+        
+        let speedFactor = min((stats.maxSpeed ?? 0) / 40.0, 1.0) * 6.0
+        
+        
+        let totalDescent = recording?.data.first?.altitude ?? 0 - (recording?.data.last?.altitude ?? 0)
+        
+        let descentFactor = min(abs(totalDescent) / 400.0, 1.0) * 2.5
+        
+        
+        let descentRateFactor = min(abs(stats.avgDescentRate) / 500.0, 1.0) * 1.5
+        
+        let intensity = speedFactor + descentFactor + descentRateFactor
+        return min(Int(intensity.rounded()), 10)
+    }
+    
+    private func calculateDropTowerIntensity(stats: Recording.RecordingStats) -> Int {
+        
+        let maxAltitudeFactor = min(stats.maxAltitude / 300.0, 1.0) * 6.0
+        
+        
+        let avgDescentRateFactor = min(abs(stats.avgDescentRate) / 3800.0, 1.0) * 3.0
+        
+        
+        let climbTimeFactor = min((stats.climbDuration ?? 0) / 60.0, 1.0) * 1.0
         
         let intensity = maxAltitudeFactor + avgDescentRateFactor + climbTimeFactor
         return min(Int(intensity.rounded()), 10)
@@ -131,9 +169,11 @@ struct ViewRecordings: View {
         Group {
             if viewModel.isLoading {
                 ProgressView("Loading...")
+                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
             } else if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
+                    .font(.headline)
             } else if let recording = viewModel.recording {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -146,6 +186,7 @@ struct ViewRecordings: View {
                 }
             } else {
                 ProgressView("Waiting...")
+                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
             }
         }
         .navigationTitle("Details")
@@ -156,7 +197,7 @@ struct ViewRecordings: View {
                     Button(role: .destructive, action: {
                         showDiscardAlert = true
                     }) {
-                        Text("Discard")
+                        Label("Discard", systemImage: "trash")
                     }
                 }
             }
