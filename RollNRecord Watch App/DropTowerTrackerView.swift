@@ -130,7 +130,7 @@ struct DropTowerTrackerView: View {
     }
     
     private func handleDescentRateChange(_ newRate: Double) {
-        if newRate < -10 {
+        if newRate < -250 {
             if (!isDropping) {
                 isDropping = true
                 dropStartTime = Date()
