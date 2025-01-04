@@ -99,11 +99,13 @@ struct DropTowerTrackerView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             
-            Text("Descent Speed: \(Int(dropSpeed)) ft/min")
+            Text("\(Int(dropSpeed)) ft/min")
                 .font(.title2)
                 .padding()
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .minimumScaleFactor(0.35)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .layoutPriority(1)
         }
     }
     
